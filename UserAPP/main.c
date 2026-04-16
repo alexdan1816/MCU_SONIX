@@ -122,7 +122,6 @@ int	main(void)
 	while (1)
     {
         __WDT_FEED_VALUE;
-
         //================ 1ms TASK =================
         if (timer_1ms_flag)
         {
@@ -133,78 +132,80 @@ int	main(void)
             {
                 blink_500ms = 0;
                 blink ^= 1;
+								if(blink)
+									SET_LED0_ON;
+								else
+									SET_LED0_OFF;
             }
             Digital_Scan();
 						
 						if(alarm_flag == 1)
 						{
-							
 							if(alarm_cnt == 0)
 							{
+								SET_LED1_ON;
 								set_buzzer_pitch(1);
+								buzzer_on();
+								alarm_cnt++;
 							}
 							else if(alarm_cnt == 500)
 							{
+								SET_LED1_OFF;
 								set_buzzer_pitch(50);
+								buzzer_off();
+								alarm_cnt++;
 							}
 							else if(alarm_cnt > 1000)
 							{
 								alarm_cnt = 0;
 							}
-							alarm_cnt++;
 						}	
         }
 
         //================ 1s TIME =================
         if (timer_1s_flag)
         {
-						timer_1s_flag = 0;
-					
-						if(alarm_flag == 1 )
+					timer_1s_flag = 0;
+					if(alarm_flag == 1 )
+					{
+						if(alarm_time > 5)
 						{
-							if(alarm_time > 5)
-							{
-								alarm_flag = 2;
-								alarm_time = 0;
-							}
-							else
-							{
-								alarm_time++;
-							}
-						}		
-            
-						uint8_t alarm_minute = minute_alarm;
-						uint8_t alarm_hour = hour_alarm;
-					
-//						eeprom_read(EEPROM_READ_ADDR,eeprom_hour_addr,&alarm_hour,1);
-//						eeprom_read(EEPROM_READ_ADDR,eeprom_minute_addr,&alarm_minute,1);
-		
-			
-            if (mode == MODE_RUN)
-            {
-                second++;
-                if (second >= 60)
-                {
-                    second = 0;
-                    minute++;
-                    if (minute >= 60)
-                    {
-                        minute = 0;
-                        hour++;
-                        if (hour > 23) hour = 0;
-                    }
-                }
-            }
-							
-						if(alarm_flag == 2 && minute != alarm_minute)
-							alarm_flag = 0;
-						if(hour == alarm_hour && minute == alarm_minute && alarm_flag == 4 ) 
+							alarm_flag = 2;
+							alarm_time = 0;
+						}
+						else
 						{
-								alarm_flag = 1;
-						}	
-							
-            display = hour * 100 + minute;
-        }
+							alarm_time++;
+						}
+					}		
+//eeprom_read(EEPROM_READ_ADDR,eeprom_hour_addr,&alarm_hour,1);
+//eeprom_read(EEPROM_READ_ADDR,eeprom_minute_addr,&alarm_minute,1);
+					if (mode == MODE_RUN)
+					{
+						second++;
+						if (second >= 60)
+						{
+							second = 0;
+							minute++;
+						  if (minute >= 60)
+							{
+								minute = 0;
+								hour++;
+								if (hour > 23) hour = 0;
+							}
+						}
+					}
+					//check if time is up 
+					if(hour == hour_alarm && minute == minute_alarm && alarm_flag == 4) 
+					{
+						alarm_flag = 1;
+					}
+					else if(alarm_flag == 2 && minute != minute_alarm) // check if already rang and finished in that minute
+					{
+						alarm_flag = 0;
+					}
+					display = hour * 100 + minute;
+				}
 				if(mode == MODE_ALARM_HH || mode == MODE_ALARM_MM)
 						Digital_DisplayDEC(display_alarm);
 				else
@@ -233,22 +234,19 @@ int	main(void)
 					}
 					else if (mode == MODE_ALARM_HH) mode = MODE_ALARM_MM;
 					else if (mode == MODE_ALARM_MM)
-						{
-							alarm_flag = 0; // reset flag to ring again
+					{							
+						eeprom_hour_addr = 0x80;
+						eeprom_minute_addr = 0x81;
 							
-							eeprom_hour_addr = 0x80;
-							eeprom_minute_addr = 0x81;
+						eeprom_hour_data = hour_alarm;
+						eeprom_minute_data = minute_alarm;
 							
-							eeprom_hour_data = hour_alarm;
-							eeprom_minute_data = minute_alarm;
-							
-//							eeprom_write(EEPROM_WRITE_ADDR,eeprom_hour_addr,&eeprom_hour_data,1);
-//							eeprom_write(EEPROM_WRITE_ADDR,eeprom_minute_addr,&eeprom_minute_data,1);
+//					eeprom_write(EEPROM_WRITE_ADDR,eeprom_hour_addr,&eeprom_hour_data,1);
+//					eeprom_write(EEPROM_WRITE_ADDR,eeprom_minute_addr,&eeprom_minute_data,1);
 
-							mode = MODE_RUN;
-							display = hour * 100 + minute;  // ? V� th�m d�ng n�y khi tho�t
-
-						}
+						mode = MODE_RUN;
+						display = hour * 100 + minute;  
+					}
         }
 
         //================ KEY4 -> INCREASE VALUE =================
@@ -321,7 +319,6 @@ int	main(void)
                 segment_buff[3] = 0;
             }
         }
-
         segment_buff[1] |= SEG_H;
 				
     }

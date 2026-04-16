@@ -11,4 +11,6 @@
 
 /*_____ D E C L A R A T I O N S ____________________________________________*/
 void set_buzzer_pitch(uint8_t pitch);
+void buzzer_on(void);
+void buzzer_off(void);
 #endif	/*__BUZZER_H*/

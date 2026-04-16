@@ -89,3 +89,12 @@ void set_buzzer_pitch(uint8_t pitch)
 		SN_CT16B1->MR0 = 0;		//disable buzzer;
 	}
 }
+void buzzer_on(void)
+{
+		SN_CT16B1->MR9 = musical_table[1];
+		SN_CT16B1->MR0 = SN_CT16B1->MR9 >> 1;
+}
+void buzzer_off(void)
+{
+		SN_CT16B1->MR0 = 0;
+}
