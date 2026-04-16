@@ -152,6 +152,8 @@ int	main(void)
         //================ 1s TIME =================
         if (timer_1s_flag)
         {
+						timer_1s_flag = 0;
+					
 						if(alarm_flag == 1 )
 						{
 							if(alarm_time > 5)
@@ -164,7 +166,7 @@ int	main(void)
 								alarm_time++;
 							}
 						}		
-            timer_1s_flag = 0;
+            
 						uint8_t alarm_minute = minute_alarm;
 						uint8_t alarm_hour = hour_alarm;
 					
@@ -196,12 +198,11 @@ int	main(void)
 						}	
 							
             display = hour * 100 + minute;
-						
-					if(mode == MODE_ALARM_HH || mode == MODE_ALARM_MM)
-						Digital_DisplayDEC(display_alarm);
-					else
-						Digital_DisplayDEC(display);
         }
+				if(mode == MODE_ALARM_HH || mode == MODE_ALARM_MM)
+						Digital_DisplayDEC(display_alarm);
+				else
+						Digital_DisplayDEC(display);
         //================ KEY =================
         read_key = KeyScan();
 
