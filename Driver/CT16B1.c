@@ -43,75 +43,80 @@ void CT16B1_NvicDisable(void);
 * Return		: None
 * Note			: None
 *****************************************************************************/
-__irq void CT16B1_IRQHandler(void)
+void CT16B1_IRQHandler(void)
 {
-	uint32_t iwRisStatus;
+	//uint32_t iwRisStatus;
 
-	iwRisStatus = SN_CT16B1->RIS;	//Save the interrupt status.
-
-	//Before checking the status, always re-check the interrupt enable register first.
-	//In practice, user might use only one or two timer interrupt source. 
-	//Ex: Enable only MR0IE and MR3IE ==> No check on MR1IE, MR2IE, and CAP0IE is necessary.
-  //User can add the directive pair of "#if 0" and "#endif" pair 
-	//to COMMENT the un-used parts to reduce ISR overheads and ROM usage.
+	uint32_t ris = SN_CT16B1->RIS;	//read interrupt request
 	
-	//Check the status in oder.
-	//MR0
-	if (SN_CT16B1->MCTRL_b.MR0IE)				//Check if MR0 IE enables?
-	{
-		if (iwRisStatus & mskCT16_MR0IF)
-		{
-			iwCT16B1_IrqEvent |= mskCT16_MR0IF;				
-			SN_CT16B1->IC = mskCT16_MR0IC;	//Clear MR0 match interrupt status
-		}
-	}
-	//MR1
-	if (SN_CT16B1->MCTRL_b.MR1IE)				//Check if MR1 IE enables?
-	{
-		if (iwRisStatus & mskCT16_MR1IF)		
-		{
-			iwCT16B1_IrqEvent |= mskCT16_MR1IF;			
-			SN_CT16B1->IC = mskCT16_MR1IC;	//Clear MR1 match interrupt status
-		}
-	}
-	//MR2
-	if (SN_CT16B1->MCTRL_b.MR2IE)				//Check if MR2 IE enables?
-	{
-		if (iwRisStatus & mskCT16_MR2IF)		
-		{
-			iwCT16B1_IrqEvent |= mskCT16_MR2IF;		
-			SN_CT16B1->IC = mskCT16_MR2IC;	//Clear MR2 match interrupt status
-		}
-	}
-	//MR3
-	if (SN_CT16B1->MCTRL_b.MR3IE)				//Check if MR3 IE enables?
-	{	
-		if (iwRisStatus & mskCT16_MR3IF)
-		{
-			iwCT16B1_IrqEvent |= mskCT16_MR3IF;		
-			SN_CT16B1->IC = mskCT16_MR3IC;	//Clear MR3 match interrupt status
-		}
-	}
+	//clear ct16b0 group interrupt flag
+	SN_CT16B1->IC = ris;
+	
+//	iwRisStatus = SN_CT16B1->RIS;	//Save the interrupt status.
 
-	//MR9
-	if (SN_CT16B1->MCTRL_b.MR9IE)				//Check if MR9 IE enables?
-	{	
-		if (iwRisStatus & mskCT16_MR9IF)	
-		{
-			iwCT16B1_IrqEvent |= mskCT16_MR9IF;		
-			SN_CT16B1->IC = mskCT16_MR9IC;	//Clear MR9 match interrupt status
-		}
-	}
+//	//Before checking the status, always re-check the interrupt enable register first.
+//	//In practice, user might use only one or two timer interrupt source. 
+//	//Ex: Enable only MR0IE and MR3IE ==> No check on MR1IE, MR2IE, and CAP0IE is necessary.
+//  //User can add the directive pair of "#if 0" and "#endif" pair 
+//	//to COMMENT the un-used parts to reduce ISR overheads and ROM usage.
+//	
+//	//Check the status in oder.
+//	//MR0
+//	if (SN_CT16B1->MCTRL_b.MR0IE)				//Check if MR0 IE enables?
+//	{
+//		if (iwRisStatus & mskCT16_MR0IF)
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_MR0IF;				
+//			SN_CT16B1->IC = mskCT16_MR0IC;	//Clear MR0 match interrupt status
+//		}
+//	}
+//	//MR1
+//	if (SN_CT16B1->MCTRL_b.MR1IE)				//Check if MR1 IE enables?
+//	{
+//		if (iwRisStatus & mskCT16_MR1IF)		
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_MR1IF;			
+//			SN_CT16B1->IC = mskCT16_MR1IC;	//Clear MR1 match interrupt status
+//		}
+//	}
+//	//MR2
+//	if (SN_CT16B1->MCTRL_b.MR2IE)				//Check if MR2 IE enables?
+//	{
+//		if (iwRisStatus & mskCT16_MR2IF)		
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_MR2IF;		
+//			SN_CT16B1->IC = mskCT16_MR2IC;	//Clear MR2 match interrupt status
+//		}
+//	}
+//	//MR3
+//	if (SN_CT16B1->MCTRL_b.MR3IE)				//Check if MR3 IE enables?
+//	{	
+//		if (iwRisStatus & mskCT16_MR3IF)
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_MR3IF;		
+//			SN_CT16B1->IC = mskCT16_MR3IC;	//Clear MR3 match interrupt status
+//		}
+//	}
 
-	//CAP0
-	if (SN_CT16B1->CAPCTRL_b.CAP0IE)		//Check if CAP0 IE enables?
-	{
-		if (iwRisStatus & mskCT16_CAP0IF)	//CAP0
-		{
-			iwCT16B1_IrqEvent |= mskCT16_CAP0IF;
-			SN_CT16B1->IC = mskCT16_CAP0IC;	//Clear CAP0 interrupt status
-		}	
-	}
+//	//MR9
+//	if (SN_CT16B1->MCTRL_b.MR9IE)				//Check if MR9 IE enables?
+//	{	
+//		if (iwRisStatus & mskCT16_MR9IF)	
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_MR9IF;		
+//			SN_CT16B1->IC = mskCT16_MR9IC;	//Clear MR9 match interrupt status
+//		}
+//	}
+
+//	//CAP0
+//	if (SN_CT16B1->CAPCTRL_b.CAP0IE)		//Check if CAP0 IE enables?
+//	{
+//		if (iwRisStatus & mskCT16_CAP0IF)	//CAP0
+//		{
+//			iwCT16B1_IrqEvent |= mskCT16_CAP0IF;
+//			SN_CT16B1->IC = mskCT16_CAP0IC;	//Clear CAP0 interrupt status
+//		}	
+//	}
 }
 
 /*****************************************************************************
@@ -125,6 +130,23 @@ __irq void CT16B1_IRQHandler(void)
 void CT16B1_Init(void)
 {
 	__CT16B1_ENABLE;
+	
+	
+	SN_CT16B1->MR9 = 12 * 1000 -1;	//HCLK=12MHz.timer 1ms
+	
+	SN_CT16B1->MR0 = 0;
+	
+	SN_CT16B1->MCTRL = 1<<30;			//when TC == MR9,reset TC = 0;
+	
+	SN_CT16B1->PWMCTRL = 1 << 0 |	//enable PWM0 PWM MODE
+											 1 << 4 |//PWM0 mode 2
+											 1 << 20;   //enable PWM0 IO output enable
+	
+	
+	SN_CT16B1->TMRCTRL = 1 << 1;		//reset timer count
+	while(SN_CT16B1->TMRCTRL & (1<<1));
+	
+	SN_CT16B1->TMRCTRL = 1;					//START TIMER
 }
 
 /*****************************************************************************

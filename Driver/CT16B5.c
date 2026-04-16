@@ -43,7 +43,7 @@ void CT16B5_NvicDisable(void);
 * Return		: None
 * Note			: None
 *****************************************************************************/
-__irq void CT16B5_IRQHandler(void)
+void CT16B5_IRQHandler(void)
 {
 	uint32_t iwRisStatus;
 

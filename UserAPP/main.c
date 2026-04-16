@@ -30,6 +30,7 @@
 #include "..\Driver\I2C.h"
 #include "..\Module\EEPROM.h"
 #include "..\Module\Buzzer.h"
+#include "..\Driver\CT16B1.h"
 
 
 /*_____ D E C L A R A T I O N S ____________________________________________*/
@@ -113,6 +114,11 @@ int	main(void)
 	WDT_Init();									//Set WDT reset overflow time ~ 250ms
 	
 	CT16B0_Init();
+	
+		//SET P3.0 as PWM pin
+	SN_PFPA->CT16B1_b.PWM0 = 1;
+	CT16B1_Init();
+
 	while (1)
     {
         __WDT_FEED_VALUE;
@@ -135,7 +141,7 @@ int	main(void)
 							
 							if(alarm_cnt == 0)
 							{
-								set_buzzer_pitch(4);
+								set_buzzer_pitch(1);
 							}
 							else if(alarm_cnt == 500)
 							{
@@ -192,7 +198,7 @@ int	main(void)
 							
 						if(alarm_flag == 2 && minute != alarm_minute)
 							alarm_flag = 0;
-						if(hour == alarm_hour && minute == alarm_minute && alarm_flag == 0 )
+						if(hour == alarm_hour && minute == alarm_minute && alarm_flag == 4 ) 
 						{
 								alarm_flag = 1;
 						}	
@@ -220,6 +226,7 @@ int	main(void)
 					if (mode == MODE_RUN) 
 					{
 						mode = MODE_ALARM_HH;
+						alarm_flag  = 4;
 						hour_alarm = 0;
 						minute_alarm = 0;
 						display_alarm = hour_alarm * 100 + minute_alarm;
