@@ -93,6 +93,15 @@ uint8_t blink = 0;
 uint16_t read_key;
 uint8_t mode = 0;
 
+uint8_t button_active = 0; // check for button sound
+//uint16_t button_active_cnt = 0; // check for button sound time
+
+uint8_t mode_timeout = 0; // check for new mode entered
+uint16_t mode_timeout_cnt = 0; // check for time out
+uint8_t mode_timeout_rst = 0; 
+
+uint16_t buzzer_timeout = 0;
+
 alarmStatus alarm_status = ALARM_END;
 
 uint16_t alarm_cnt = 0; 
@@ -201,7 +210,38 @@ int	main(void)
 							{
 								alarm_cnt = 0;
 							}
-						}	
+						}
+						if(button_active)
+						{
+							if(buzzer_timeout <= 300)
+							{
+								set_buzzer_pitch(1);
+								buzzer_timeout ++;
+							}
+							else
+							{
+								set_buzzer_pitch(50);
+								buzzer_timeout = 0;
+								button_active = 0;
+							}
+						}
+						if(mode_timeout)
+						{
+							mode_timeout_cnt++;
+							if(mode_timeout_rst)
+							{
+								mode_timeout_cnt = 0;
+								mode_timeout_rst = 0;
+							}
+							if(mode_timeout_cnt > 30000)
+							{
+								mode = MODE_RUN;
+								mode_timeout_cnt = 0;
+								mode_timeout = 0;
+								button_active = 1;
+							}
+								
+						}
         }
 
         //================ 1s TIME =================
@@ -256,14 +296,25 @@ int	main(void)
         //================ KEY3 -> SET TIME MODE =================
         if (read_key == (KEY_PUSH_FLAG | KEY_3))
         {
+						button_active = 1;	
+						mode_timeout = 1;
+					
             if (mode == MODE_RUN) mode = MODE_SET_HH;
             else if (mode == MODE_SET_HH) mode = MODE_SET_MM;
-            else if (mode == MODE_SET_MM) mode = MODE_RUN;
+            else if (mode == MODE_SET_MM) 
+						{	
+							mode = MODE_RUN;
+							mode_timeout = 0;
+						}
+						
         }
 
         //================ KEY16 -> ALARM MODE =================
 				else if (read_key == (KEY_PUSH_FLAG | KEY_16))
 				{
+					button_active = 1;
+					mode_timeout = 1;
+					
 					if (mode == MODE_RUN) 
 					{
 						mode = MODE_ALARM_HH; 
@@ -279,12 +330,16 @@ int	main(void)
 						alarm_status = ALARM_READY;
 						eeprom_status = EEPROM_WRITE;
 						display = hour * 100 + minute;  
+						mode_timeout = 0;
 					}
         }
 
         //================ KEY4 -> INCREASE VALUE =================
         else if (read_key == (KEY_PUSH_FLAG | KEY_4))
         {
+						button_active = 1;
+						mode_timeout = 1;
+					
             if (mode == MODE_SET_HH)
             {
                 hour++;
@@ -313,7 +368,11 @@ int	main(void)
 				
         //================ KEY8 -> DECREASE VALUE =================
         else if (read_key == (KEY_PUSH_FLAG | KEY_8))
-        {
+					{
+						button_active = 1;			
+						mode_timeout_cnt = 1;
+
+						
             if (mode == MODE_SET_HH)
             {
                 if (hour == 0) hour = 23;
