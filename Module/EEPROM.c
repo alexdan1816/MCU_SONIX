@@ -36,18 +36,18 @@
 * Return		: None
 * Note			: None
 *****************************************************************************/
-void eeprom_write(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
+uint8_t eeprom_write(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
 {
 	I2C0_Start();															
 	if(I2C_write_byte(addr) == I2C_NACK_FALG)					//send slaver addr
 	{
 		I2C0_Stop();
-		return;
+		return 0;
 	}
 	if(I2C_write_byte(reg) == I2C_NACK_FALG)					//send eeprom address
 	{
 		I2C0_Stop();
-		return;
+		return 0;
 	}	
 	
 	while(length--)
@@ -55,10 +55,11 @@ void eeprom_write(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
 		if(I2C_write_byte(*dat++) == I2C_NACK_FALG)					//write data
 		{
 			I2C0_Stop();
-			return;
+			return 0;
 		}	
 	}
 	I2C0_Stop();
+	return 1;
 }
 
 /*****************************************************************************
@@ -71,25 +72,25 @@ void eeprom_write(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
 * Return		: None
 * Note			: None
 *****************************************************************************/
-void eeprom_read(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
+uint8_t eeprom_read(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
 {
 	I2C0_Start();
 	if(I2C_write_byte(addr&0xfe) == I2C_NACK_FALG)			//send slaver addr|W
 	{
 		I2C0_Stop();
-		return;
+		return 0;
 	}
 	if(I2C_write_byte(reg) == I2C_NACK_FALG)						//send eeprom address
 	{
 		I2C0_Stop();
-		return;
+		return 0;
 	}	
 	I2C0_Start();																				//repeat start
 	
 	if(I2C_write_byte(addr) == I2C_NACK_FALG)						//send slaver addr|R
 	{
 		I2C0_Stop();
-		return;
+		return 0;
 	}	
 	while(length > 1)
 	{
@@ -99,5 +100,7 @@ void eeprom_read(uint8_t addr,uint8_t reg,uint8_t *dat,uint16_t length)
 	
 	*dat++ = I2C_read_byte(I2C_NACK_FALG);								//read data and return nack
 	I2C0_Stop();
+	return 1;
+	
 }
 

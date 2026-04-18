@@ -78,23 +78,23 @@ void set_buzzer_pitch(uint8_t pitch)
 	uint8_t buff_len = sizeof(musical_table)>>1;		//16bit size, buffer length /2
 	if(pitch < buff_len)	
 	{
-		SN_CT16B1->MR9 = musical_table[pitch];
-		SN_CT16B1->MR0 = SN_CT16B1->MR9 >> 1;
+		SN_CT16B0->MR9 = musical_table[pitch];
+		SN_CT16B0->MR0 = SN_CT16B0->MR9 >> 1;
 		
-		SN_CT16B1->TMRCTRL = 0;					//START TIMER
-		SN_CT16B1->TMRCTRL = 1;					//START TIMER
+		SN_CT16B0->TMRCTRL = 0;					//START TIMER
+		SN_CT16B0->TMRCTRL = 1;					//START TIMER
 	}
 	else
 	{
-		SN_CT16B1->MR0 = 0;		//disable buzzer;
+		SN_CT16B0->MR0 = 0;		//disable buzzer;
 	}
 }
 void buzzer_on(void)
 {
-		SN_CT16B1->MR9 = musical_table[1];
-		SN_CT16B1->MR0 = SN_CT16B1->MR9 >> 1;
+		SN_CT16B0->MR9 = musical_table[1];
+		SN_CT16B0->MR0 = SN_CT16B0->MR9 >> 1;
 }
 void buzzer_off(void)
 {
-		SN_CT16B1->MR0 = 0;
+		SN_CT16B0->MR0 = 0;
 }

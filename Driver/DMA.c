@@ -148,11 +148,11 @@ void DMA_UnInit (void)
 * Return			: None
 * Note				: None
 *****************************************************************************/
-__irq void DMA_IRQHandler(void)
+void DMA_IRQHandler(void)
 {
 	uint8_t b_DMACHn;
 	uint32_t w_INT_Buf, w_INT_TC_Buf, w_INT_ERR_ABT_Buf;
-	
+		
 	w_INT_Buf = SN_DMA0->INT;
 	w_INT_TC_Buf = SN_DMA0->INT_TC;
 	w_INT_ERR_ABT_Buf = SN_DMA0->INT_ABT;

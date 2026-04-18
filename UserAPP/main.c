@@ -55,6 +55,29 @@ void NotPinOut_GPIO_init(void);
 #define	EEPROM_WRITE_ADDR			0xa0
 #define	EEPROM_READ_ADDR			0xa1
 
+#define EEPROM_HOUR_ADDR 			0x80
+#define EEPROM_MINUTE_ADDR		0x81
+
+
+
+
+typedef enum{
+	ALARM_IDLE,
+	ALARM_SET,
+	ALARM_READY,
+	ALARM_RING,
+	ALARM_END
+}alarmStatus;
+
+typedef enum{
+	EEPROM_IDLE,
+	EEPROM_HOUR_DONE,
+	EEPROM_MINUTE_DONE,
+	EEPROM_READ_DONE,
+	EEPROM_WRITE, 
+	EEPROM_WRITE_DONE
+}eepromStatus;
+
 /*_____ M A C R O S ________________________________________________________*/
 
 /*_____ F U N C T I O N S __________________________________________________*/
@@ -70,16 +93,19 @@ uint8_t blink = 0;
 uint16_t read_key;
 uint8_t mode = 0;
 
-uint8_t alarm_flag = 0; //0:idle //1:ring //2:off
+alarmStatus alarm_status = ALARM_END;
+
 uint16_t alarm_cnt = 0; 
 uint8_t alarm_time = 0;
 
 //---- EEPROM data and address
-uint8_t eeprom_hour_addr = 0;
+uint8_t eeprom_hour_addr = 0x80;
 uint8_t eeprom_hour_data = 0;
-uint8_t eeprom_minute_addr = 0;
+uint8_t eeprom_minute_addr = 0x81;
 uint8_t eeprom_minute_data = 0;
-
+eepromStatus eeprom_status = EEPROM_IDLE;
+eepromStatus hour_status = EEPROM_WRITE;
+eepromStatus minute_status = EEPROM_WRITE;
 
 
 /*****************************************************************************
@@ -109,6 +135,8 @@ int	main(void)
 	//enable reset pin function
 	SN_SYS0->EXRSTCTRL_b.RESETDIS = 0;
 	
+	I2C0_Init();
+	
 	GPIO_Init();								//initial gpio
 	
 	WDT_Init();									//Set WDT reset overflow time ~ 250ms
@@ -116,12 +144,34 @@ int	main(void)
 	CT16B0_Init();
 	
 		//SET P3.0 as PWM pin
-	SN_PFPA->CT16B1_b.PWM0 = 1;
+	SN_PFPA->CT16B0_b.PWM0 = 1;
 	CT16B1_Init();
-
+	
+	while(eeprom_read(EEPROM_READ_ADDR,EEPROM_HOUR_ADDR,&hour_alarm,1) != 1);
+	while(eeprom_read(EEPROM_READ_ADDR,EEPROM_MINUTE_ADDR,&minute_alarm,1)!= 1);
+	alarm_status = ALARM_READY;
+	
 	while (1)
     {
         __WDT_FEED_VALUE;
+			
+				//================ EEPROM TASK===============
+				if(eeprom_status == EEPROM_WRITE)
+				{
+						if(eeprom_write(EEPROM_WRITE_ADDR,EEPROM_HOUR_ADDR,&hour_alarm,1) && hour_status != EEPROM_WRITE_DONE )
+						{
+								hour_status = EEPROM_WRITE_DONE;
+						}
+						if(eeprom_write(EEPROM_WRITE_ADDR,EEPROM_MINUTE_ADDR,&minute_alarm,1) && minute_status != EEPROM_WRITE_DONE)
+						{
+								minute_status = EEPROM_WRITE_DONE;
+						}	
+						if(hour_status == EEPROM_WRITE_DONE && minute_status == EEPROM_WRITE_DONE)
+						{
+								eeprom_status = EEPROM_IDLE;
+						}
+				}
+					
         //================ 1ms TASK =================
         if (timer_1ms_flag)
         {
@@ -132,30 +182,22 @@ int	main(void)
             {
                 blink_500ms = 0;
                 blink ^= 1;
-								if(blink)
-									SET_LED0_ON;
-								else
-									SET_LED0_OFF;
             }
             Digital_Scan();
-						
-						if(alarm_flag == 1)
+						if(alarm_status == ALARM_RING)
 						{
-							if(alarm_cnt == 0)
+							alarm_cnt++;
+							if(alarm_cnt <= 500)
 							{
 								SET_LED1_ON;
 								set_buzzer_pitch(1);
-								buzzer_on();
-								alarm_cnt++;
 							}
-							else if(alarm_cnt == 500)
+							if(alarm_cnt > 500)
 							{
 								SET_LED1_OFF;
 								set_buzzer_pitch(50);
-								buzzer_off();
-								alarm_cnt++;
 							}
-							else if(alarm_cnt > 1000)
+							if(alarm_cnt > 1000)
 							{
 								alarm_cnt = 0;
 							}
@@ -166,11 +208,11 @@ int	main(void)
         if (timer_1s_flag)
         {
 					timer_1s_flag = 0;
-					if(alarm_flag == 1 )
+					if(alarm_status == ALARM_RING )
 					{
 						if(alarm_time > 5)
 						{
-							alarm_flag = 2;
+							alarm_status = ALARM_END;
 							alarm_time = 0;
 						}
 						else
@@ -178,8 +220,6 @@ int	main(void)
 							alarm_time++;
 						}
 					}		
-//eeprom_read(EEPROM_READ_ADDR,eeprom_hour_addr,&alarm_hour,1);
-//eeprom_read(EEPROM_READ_ADDR,eeprom_minute_addr,&alarm_minute,1);
 					if (mode == MODE_RUN)
 					{
 						second++;
@@ -196,13 +236,13 @@ int	main(void)
 						}
 					}
 					//check if time is up 
-					if(hour == hour_alarm && minute == minute_alarm && alarm_flag == 4) 
+					if(hour == hour_alarm && minute == minute_alarm && alarm_status == ALARM_READY) 
 					{
-						alarm_flag = 1;
+						alarm_status = ALARM_RING;
 					}
-					else if(alarm_flag == 2 && minute != minute_alarm) // check if already rang and finished in that minute
+					else if(alarm_status == ALARM_END && minute != minute_alarm) // check if already rang and finished in that minute
 					{
-						alarm_flag = 0;
+						alarm_status = ALARM_READY;
 					}
 					display = hour * 100 + minute;
 				}
@@ -213,8 +253,8 @@ int	main(void)
         //================ KEY =================
         read_key = KeyScan();
 
-        //================ KEY1 -> SET TIME MODE =================
-        if (read_key == (KEY_PUSH_FLAG | KEY_1))
+        //================ KEY3 -> SET TIME MODE =================
+        if (read_key == (KEY_PUSH_FLAG | KEY_3))
         {
             if (mode == MODE_RUN) mode = MODE_SET_HH;
             else if (mode == MODE_SET_HH) mode = MODE_SET_MM;
@@ -226,25 +266,18 @@ int	main(void)
 				{
 					if (mode == MODE_RUN) 
 					{
-						mode = MODE_ALARM_HH;
-						alarm_flag  = 4;
-						hour_alarm = 0;
-						minute_alarm = 0;
+						mode = MODE_ALARM_HH; 
+						
+						alarm_status  = ALARM_SET;
+						
 						display_alarm = hour_alarm * 100 + minute_alarm;
 					}
 					else if (mode == MODE_ALARM_HH) mode = MODE_ALARM_MM;
 					else if (mode == MODE_ALARM_MM)
-					{							
-						eeprom_hour_addr = 0x80;
-						eeprom_minute_addr = 0x81;
-							
-						eeprom_hour_data = hour_alarm;
-						eeprom_minute_data = minute_alarm;
-							
-//					eeprom_write(EEPROM_WRITE_ADDR,eeprom_hour_addr,&eeprom_hour_data,1);
-//					eeprom_write(EEPROM_WRITE_ADDR,eeprom_minute_addr,&eeprom_minute_data,1);
-
+					{													
 						mode = MODE_RUN;
+						alarm_status = ALARM_READY;
+						eeprom_status = EEPROM_WRITE;
 						display = hour * 100 + minute;  
 					}
         }
@@ -283,24 +316,24 @@ int	main(void)
         {
             if (mode == MODE_SET_HH)
             {
+                if (hour == 0) hour = 23;
 								hour--;
-                if (hour == 255) hour = 23;
             }
             else if (mode == MODE_SET_MM)
             {
+                if (minute == 0) minute = 59;
 								minute--;
-                if (minute == 255) minute = 59;
             }
 						else if (mode == MODE_ALARM_HH)
 						{
+								if (hour_alarm == 0) hour_alarm = 23;
 								hour_alarm--;
-								if (hour_alarm == 255) hour_alarm = 23;
 								display_alarm = hour_alarm * 100 + minute_alarm;
 						}
 						else if (mode == MODE_ALARM_MM)
 						{
+								if (minute_alarm == 0) minute_alarm = 59;
 								minute_alarm--;
-								if (minute_alarm == 255) minute_alarm = 59;
 								display_alarm = hour_alarm * 100 + minute_alarm;
 						}
 						display = hour * 100 + minute;
